@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# acurl — curl che passa OBBLIGATORIAMENTE dal tunnel Tor (SOCKS5h, DNS remoto).
+# Se il tunnel non è in ascolto si ferma (exit 3) invece di uscire con l'IP reale.
+#
+# Uso: identico a curl
+#   acurl -sk 'https://target/path'
+#   acurl -sI https://target/path
+#
+# TOR_SOCKS può sovrascrivere l'endpoint: TOR_SOCKS=127.0.0.1:9050 acurl ...
+set -u
+
+SOCKS="${TOR_SOCKS:-127.0.0.1:9050}"
+HOST="${SOCKS%%:*}"; PORT="${SOCKS##*:}"
+
+# il proxy lo mettiamo noi: due proxy conflittuali sarebbero un leak silenzioso
+for a in "$@"; do
+  case "$a" in
+    --proxy|--socks5-hostname|--socks5|--socks4|--http*proxy*|--all-proxy)
+      echo "acurl: non passare proxy a mano (gia' forzato su $SOCKS)" >&2; exit 2 ;;
+  esac
+done
+
+if ! (exec 3<>"/dev/tcp/$HOST/$PORT") 2>/dev/null; then
+  echo "acurl: nessun SOCKS su $SOCKS — avviare tor (vedi setup-tor.sh)" >&2
+  exit 3
+fi
+
+exec curl --socks5-hostname "$SOCKS" "$@"

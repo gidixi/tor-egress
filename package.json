@@ -1,0 +1,27 @@
+{
+  "name": "tor-egress",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MCP server + skill per instradare ogni richiesta HTTP(S) su Tor con fingerprint da browser (pi, Claude Code, Codex, qualsiasi client MCP)",
+  "type": "module",
+  "keywords": ["pi-package", "mcp", "tor", "anonymity", "http"],
+  "pi": {
+    "extensions": ["./extension.js"],
+    "skills": ["./skills"]
+  },
+  "files": [
+    "extension.js",
+    "server/",
+    "skills/",
+    "bin/",
+    "setup-tor.sh",
+    "requirements.txt",
+    "selftest.py",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "python3 selftest.py",
+    "test:offline": "python3 selftest.py --offline",
+    "setup": "bash setup-tor.sh"
+  }
+}
