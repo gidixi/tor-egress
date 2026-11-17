@@ -41,7 +41,7 @@ Regole:
   tor_newnym e riprova più lentamente.
 """
 
-mcp = FastMCP("tor-egress", instructions=INSTRUCTIONS)
+mcp = FastMCP("tor-egress", instructions=INSTRUCTIONS, log_level="WARNING")
 _client = torhttp.client()
 
 
