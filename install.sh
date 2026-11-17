@@ -17,6 +17,7 @@ WITH_TOR=0
 WITH_DEPS=1
 WITH_PI=auto
 DO_CHECK=0
+DEST_SET=0
 
 SOCKS="${TOR_SOCKS:-127.0.0.1:9050}"
 
@@ -51,8 +52,8 @@ EOF
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --dir)        DEST="${2:?--dir richiede un percorso}"; shift 2 ;;
-    --dir=*)      DEST="${1#*=}"; shift ;;
+    --dir)        DEST="${2:?--dir richiede un percorso}"; DEST_SET=1; shift 2 ;;
+    --dir=*)      DEST="${1#*=}"; DEST_SET=1; shift ;;
     --ref)        REF="${2:?--ref richiede un valore}"; shift 2 ;;
     --ref=*)      REF="${1#*=}"; shift ;;
     --with-tor)   WITH_TOR=1; shift ;;
@@ -68,17 +69,6 @@ done
 
 DEST="${DEST/#\~/$HOME}"
 
-# ---------------------------------------------------------------- uninstall
-if [ "$MODE" = uninstall ]; then
-  say "Rimozione"
-  if command -v pi >/dev/null 2>&1; then
-    pi remove "$DEST" >/dev/null 2>&1 || pi remove --local "$DEST" >/dev/null 2>&1 || true
-  fi
-  if [ -d "$DEST" ]; then rm -rf "$DEST"; ok "rimosso $DEST"; else warn "$DEST non esiste"; fi
-  echo "Le modifiche a Tor (/etc/tor/torrc, ~/.tor_ctrl_pass) restano: rimuovile a mano se non servono."
-  exit 0
-fi
-
 # ------------------------------------------------------- script locale o remoto
 SELF_DIR=""
 if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
@@ -88,6 +78,19 @@ LOCAL_SRC=""
 if [ -n "$SELF_DIR" ] && [ -f "$SELF_DIR/package.json" ] \
    && grep -q '"name": *"tor-egress"' "$SELF_DIR/package.json" 2>/dev/null; then
   LOCAL_SRC="$SELF_DIR"
+fi
+
+# ---------------------------------------------------------------- uninstall
+if [ "$MODE" = uninstall ]; then
+  # lanciato da un'installazione locale senza --dir: rimuovi quella cartella
+  if [ "$DEST_SET" = 0 ] && [ -n "$LOCAL_SRC" ]; then DEST="$LOCAL_SRC"; fi
+  say "Rimozione"
+  if command -v pi >/dev/null 2>&1; then
+    pi remove "$DEST" >/dev/null 2>&1 || pi remove --local "$DEST" >/dev/null 2>&1 || true
+  fi
+  if [ -d "$DEST" ]; then rm -rf "$DEST"; ok "rimosso $DEST"; else warn "$DEST non esiste"; fi
+  echo "Le modifiche a Tor (/etc/tor/torrc, ~/.tor_ctrl_pass) restano: rimuovile a mano se non servono."
+  exit 0
 fi
 
 command -v python3 >/dev/null 2>&1 || die "serve python3 (>= 3.9)"
